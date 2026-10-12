@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Despesas de Viagem">
+<meta name="theme-color" content="#10231F">
+<title>Despesas de Viagem</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+:root{--ink:#10231F;--paper:#EEF2F0;--card:#fff;--line:#D3DDD9;--sea:#0E6B6B;--sign:#F2C230;--mute:#5B6E69;--danger:#B3412F}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font-family:"Avenir Next","Segoe UI",system-ui,sans-serif;background:var(--paper);color:var(--ink);-webkit-tap-highlight-color:transparent}
+header{background:var(--ink);color:#fff;padding:calc(env(safe-area-inset-top) + 16px) 20px 18px;border-bottom:4px solid var(--sign)}
+header h1{font-size:22px;font-weight:700;letter-spacing:-.01em}
+main{padding:16px 16px calc(96px + env(safe-area-inset-bottom));max-width:560px;margin:0 auto}
+.tab{display:none}.tab.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:var(--mute);margin-bottom:14px}
+input,select{font:inherit;font-size:16px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;width:100%;min-width:0;font-variant-numeric:tabular-nums}
+input:focus,select:focus{outline:none;border-color:var(--sea);box-shadow:0 0 0 3px rgba(14,107,107,.18)}
+.sub{font-size:13px;font-weight:700;color:var(--ink);margin:2px 0 10px}
+button{font:inherit;cursor:pointer}
+.btn{width:100%;border:0;border-radius:12px;padding:14px;font-weight:700;font-size:16px;background:var(--sign);color:var(--ink)}
+.btn.sec{background:#fff;border:1.5px solid var(--ink)}
+.btn.out{background:#fff;border:1.5px solid var(--line);color:var(--danger);font-weight:600;font-size:14px;padding:11px}
+.row{display:flex;gap:10px;margin-bottom:10px}
+.resumo{background:var(--ink);color:#fff;border-radius:14px;padding:16px;margin-bottom:14px}
+.resumo .big{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.resumo .lbl{font-size:13px;color:#A9BDB8}
+.cats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;font-size:12px;color:#A9BDB8}
+.cats b{display:block;color:#fff;font-size:14px;font-variant-numeric:tabular-nums}
+.dia-top{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.x{border:0;background:#F4E4E0;color:var(--danger);border-radius:10px;width:44px;height:44px;font-size:22px;flex-shrink:0}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid label{margin-bottom:0;font-size:12px}
+.grid input{padding:10px 8px}
+.dtot{margin-top:12px;display:flex;justify-content:space-between;font-size:14px;color:var(--mute)}
+.dtot b{color:var(--ink);font-variant-numeric:tabular-nums}
+.vazio{text-align:center;color:var(--mute);padding:48px 16px;line-height:1.5}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;padding:16px 8px;font-weight:600;color:var(--mute);font-size:15px;border-top:3px solid transparent}
+nav button.on{color:var(--ink);border-top-color:var(--sea)}
+#print{display:none}
+@media print{
+  body>*:not(#print){display:none!important}
+  #print{display:block;padding:8px;color:#000;font-family:Georgia,serif}
+  #print h1{font-size:22px}#print h2{font-size:18px;margin:2px 0 6px}#print p{font-size:13px;margin-bottom:12px}
+  #print table{width:100%;border-collapse:collapse;font-size:13px}
+  #print th,#print td{border:1px solid #999;padding:6px 8px;text-align:right}
+  #print th:first-child,#print td:first-child{text-align:left}
+  #print thead th,#print tfoot td{background:#eee;font-weight:bold}
+  #print .gen{margin-top:14px;font-size:11px;color:#555}
+}
+</style>
+</head>
+<body>
+<header><h1 id="titulo">Nova viagem</h1></header>
+<main>
+  <section id="tab-nova" class="tab active">
+    <form id="form-nova" class="card">
+      <label>Nome da viagem<input id="n-nome" required placeholder="Ex.: Porto Velho — reunião"></label>
+      <label>Data de início<input id="n-data" type="date" required></label>
+      <p class="sub">Gastos do primeiro dia</p>
+      <div class="grid">
+        <label>Hotel<input id="n-hotel" inputmode="decimal" placeholder="0,00"></label>
+        <label>Combustível<input id="n-comb" inputmode="decimal" placeholder="0,00"></label>
+        <label>Alimentação<input id="n-alim" inputmode="decimal" placeholder="0,00"></label>
+      </div>
+      <button class="btn" style="margin-top:16px">OK</button>
+    </form>
+  </section>
+
+  <section id="tab-rel" class="tab">
+    <div id="vazio" class="vazio">Nenhuma viagem ainda.<br>Cadastre uma na aba Nova viagem.</div>
+    <div id="rel" hidden>
+      <label>Viagem<select id="sel"></select></label>
+      <div class="resumo">
+        <div class="lbl">Total da viagem</div>
+        <div class="big" id="r-total"></div>
+        <div class="cats"><div>Hotel<b id="r-hotel"></b></div><div>Combustível<b id="r-comb"></b></div><div>Alimentação<b id="r-alim"></b></div></div>
+      </div>
+      <div id="dias"></div>
+      <div class="row"><button class="btn sec" id="add">+ Adicionar dia</button></div>
+      <div class="row"><button class="btn" id="imprimir">Imprimir / salvar PDF</button></div>
+      <button class="btn out" id="del-viagem">Excluir esta viagem</button>
+    </div>
+  </section>
+</main>
+<nav>
+  <button data-tab="nova" class="on">Nova viagem</button>
+  <button data-tab="rel">Relatório</button>
+</nav>
+<div id="print"></div>
+
+<script>
+const KEY='despesas_viagem_v1';
+let trips=[];try{trips=JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){}
+let sel=null;
+const $=s=>document.querySelector(s);
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(trips))}catch(e){alert('Não foi possível salvar os dados neste aparelho.')}};
+const num=v=>{v=String(v).trim();if(v.includes(','))v=v.replace(/\./g,'').replace(',','.');return parseFloat(v)||0};
+const brl=n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fd=d=>d.split('-').reverse().join('/');
+const wd=d=>new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','');
+const tot=d=>d.hotel+d.comb+d.alim;
+const sum=t=>t.dias.reduce((a,d)=>({hotel:a.hotel+d.hotel,comb:a.comb+d.comb,alim:a.alim+d.alim}),{hotel:0,comb:0,alim:0});
+const hoje=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const CAMPOS=[['hotel','Hotel'],['comb','Combustível'],['alim','Alimentação']];
+
+function show(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.id==='tab-'+tab));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+  $('#titulo').textContent=tab==='nova'?'Nova viagem':'Relatório';
+  if(tab==='rel')render();
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.tab));
+
+function resumo(t){
+  const s=sum(t);
+  $('#r-total').textContent=brl(s.hotel+s.comb+s.alim);
+  $('#r-hotel').textContent=brl(s.hotel);$('#r-comb').textContent=brl(s.comb);$('#r-alim').textContent=brl(s.alim);
+}
+
+function render(){
+  const t=trips.find(x=>x.id===sel)||trips[0];
+  $('#vazio').hidden=!!t;$('#rel').hidden=!t;
+  if(!t)return;
+  sel=t.id;
+  $('#sel').innerHTML=trips.map(x=>`<option value="${x.id}"${x.id===sel?' selected':''}>${esc(x.nome)} (${fd(x.inicio)})</option>`).join('');
+  $('#dias').innerHTML=t.dias.map((d,i)=>`<div class="card dia" data-i="${i}">
+    <div class="dia-top"><input type="date" data-f="data" value="${d.data}"><button class="x" data-del aria-label="Excluir dia">×</button></div>
+    <div class="grid">${CAMPOS.map(([k,l])=>`<label>${l}<input data-f="${k}" inputmode="decimal" placeholder="0,00" value="${d[k]?String(d[k]).replace('.',','):''}"></label>`).join('')}</div>
+    <div class="dtot">Total do dia <b>${brl(tot(d))}</b></div></div>`).join('');
+  resumo(t);
+}
+
+$('#form-nova').onsubmit=e=>{
+  e.preventDefault();
+  const t={id:'t'+Date.now(),nome:$('#n-nome').value.trim(),inicio:$('#n-data').value,
+    dias:[{data:$('#n-data').value,hotel:num($('#n-hotel').value),comb:num($('#n-comb').value),alim:num($('#n-alim').value)}]};
+  trips.unshift(t);save();sel=t.id;
+  e.target.reset();$('#n-data').value=hoje();
+  show('rel');
+};
+
+$('#dias').addEventListener('change',e=>{
+  const card=e.target.closest('.dia'),f=e.target.dataset.f;if(!card||!f)return;
+  const t=trips.find(x=>x.id===sel),d=t.dias[card.dataset.i];
+  if(f==='data'){d.data=e.target.value||d.data}
+  else{d[f]=num(e.target.value);e.target.value=d[f]?String(d[f]).replace('.',','):''}
+  card.querySelector('.dtot b').textContent=brl(tot(d));
+  save();resumo(t);
+});
+$('#dias').addEventListener('click',e=>{
+  if(!e.target.closest('[data-del]'))return;
+  const t=trips.find(x=>x.id===sel),i=e.target.closest('.dia').dataset.i;
+  if(!confirm('Excluir este dia?'))return;
+  t.dias.splice(i,1);save();render();
+});
+$('#add').onclick=()=>{
+  const t=trips.find(x=>x.id===sel),ult=t.dias.length?t.dias[t.dias.length-1].data:t.inicio;
+  const n=new Date(ult+'T12:00:00');n.setDate(n.getDate()+1);
+  t.dias.push({data:n.toISOString().slice(0,10),hotel:0,comb:0,alim:0});
+  save();render();
+  const c=document.querySelectorAll('.dia');c[c.length-1].scrollIntoView({behavior:'smooth',block:'center'});
+};
+$('#sel').onchange=e=>{sel=e.target.value;render()};
+$('#del-viagem').onclick=()=>{
+  const t=trips.find(x=>x.id===sel);
+  if(!confirm('Excluir a viagem "'+t.nome+'" e todos os seus dias?'))return;
+  trips=trips.filter(x=>x.id!==sel);sel=null;save();render();
+};
+
+$('#imprimir').onclick=()=>{
+  const t=trips.find(x=>x.id===sel),s=sum(t);
+  const dias=t.dias.slice().sort((a,b)=>a.data.localeCompare(b.data));
+  $('#print').innerHTML=`<h1>Despesas de Viagem</h1><h2>${esc(t.nome)}</h2>
+    <p>Início em ${fd(t.inicio)} — ${dias.length} dia(s)</p>
+    <table><thead><tr><th>Dia</th><th>Hotel</th><th>Combustível</th><th>Alimentação</th><th>Total</th></tr></thead>
+    <tbody>${dias.map(d=>`<tr><td>${fd(d.data)} (${wd(d.data)})</td><td>${brl(d.hotel)}</td><td>${brl(d.comb)}</td><td>${brl(d.alim)}</td><td>${brl(tot(d))}</td></tr>`).join('')}</tbody>
+    <tfoot><tr><td>Total</td><td>${brl(s.hotel)}</td><td>${brl(s.comb)}</td><td>${brl(s.alim)}</td><td>${brl(s.hotel+s.comb+s.alim)}</td></tr></tfoot></table>
+    <p class="gen">Gerado em ${new Date().toLocaleString('pt-BR')}</p>`;
+  const antes=document.title;document.title='Despesas - '+t.nome;
+  window.print();
+  setTimeout(()=>document.title=antes,1000);
+};
+
+$('#n-data').value=hoje();
+if(trips.length){sel=trips[0].id}
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.error));
+</script>
+</body>
+</html>

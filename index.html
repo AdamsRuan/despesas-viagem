@@ -61,6 +61,12 @@ nav button.on{color:var(--ink);border-top-color:var(--sea)}
   #print th,#print td{border:1px solid #999;padding:6px 8px;text-align:right}
   #print th:first-child,#print td:first-child{text-align:left}
   #print thead th,#print tfoot td{background:#eee;font-weight:bold}
+  #print .dia{text-align:left;vertical-align:middle;white-space:nowrap}
+  #print .tdia{vertical-align:middle}
+  #print .tt td{background:#eee;font-weight:bold}
+  #print .res{margin-top:18px}
+  #print .res td:first-child{text-align:right}
+  #print tr{break-inside:avoid}
   #print small{font-size:10.5px;color:#555;font-weight:normal}
   #print .gen{margin-top:14px;font-size:11px;color:#555}
 }
@@ -203,10 +209,22 @@ $('#del-viagem').onclick=()=>{
 $('#imprimir').onclick=()=>{
   limpa();const t=trips.find(x=>x.id===sel),s=sum(t);
   const dias=t.dias.slice().sort((a,b)=>a.data.localeCompare(b.data));
+  // Cada dia ocupa tantas linhas quanto a categoria com mais gastos; Dia e Total do dia são células mescladas.
+  const corpo=dias.map(d=>{
+    const L=CAMPOS.map(([k])=>d[k].filter(v=>v));
+    const n=Math.max(1,...L.map(a=>a.length));
+    let r='';
+    for(let i=0;i<n;i++){
+      r+='<tr>'+(i?'':`<td class="dia" rowspan="${n}">${fd(d.data)} (${wd(d.data)})</td>`)
+        +L.map(a=>`<td>${a[i]!==undefined?brl(a[i]):''}</td>`).join('')
+        +(i?'':`<td class="tdia" rowspan="${n}">${brl(tot(d))}</td>`)+'</tr>';
+    }
+    return r;
+  }).join('');
   $('#print').innerHTML=`<h1>Despesas de Viagem</h1><h2>${esc(t.nome)}</h2>
     <p>Início em ${fd(t.inicio)} — ${dias.length} dia(s)</p>
     <table><thead><tr><th>Dia</th><th>Hotel</th><th>Combustível</th><th>Alimentação</th><th>Total</th></tr></thead>
-    <tbody>${dias.map(d=>`<tr><td>${fd(d.data)} (${wd(d.data)})</td><td>${cel(d.hotel)}</td><td>${cel(d.comb)}</td><td>${cel(d.alim)}</td><td>${brl(tot(d))}</td></tr>`).join('')}</tbody>
+    <tbody>${corpo}</tbody>
     <tfoot><tr><td>Total</td><td>${brl(s.hotel)}</td><td>${brl(s.comb)}</td><td>${brl(s.alim)}</td><td>${brl(s.hotel+s.comb+s.alim)}</td></tr></tfoot></table>
     <p class="gen">Gerado em ${new Date().toLocaleString('pt-BR')}</p>`;
   const antes=document.title;document.title='Despesas - '+t.nome;

@@ -41,6 +41,11 @@ button{font:inherit;cursor:pointer}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .grid label{margin-bottom:0;font-size:12px}
 .grid input{padding:10px 8px}
+.grid{align-items:start}
+.col{display:flex;flex-direction:column;gap:6px}
+.col .l{font-size:12px;font-weight:600;color:var(--mute)}
+.mais{border:1.5px dashed var(--sea);background:#fff;color:var(--sea);border-radius:10px;padding:6px;font-size:20px;font-weight:700;line-height:1}
+.cs{font-size:12px;color:var(--mute);text-align:right;font-variant-numeric:tabular-nums;min-height:0}
 .dtot{margin-top:12px;display:flex;justify-content:space-between;font-size:14px;color:var(--mute)}
 .dtot b{color:var(--ink);font-variant-numeric:tabular-nums}
 .vazio{text-align:center;color:var(--mute);padding:48px 16px;line-height:1.5}
@@ -56,6 +61,7 @@ nav button.on{color:var(--ink);border-top-color:var(--sea)}
   #print th,#print td{border:1px solid #999;padding:6px 8px;text-align:right}
   #print th:first-child,#print td:first-child{text-align:left}
   #print thead th,#print tfoot td{background:#eee;font-weight:bold}
+  #print small{font-size:10.5px;color:#555;font-weight:normal}
   #print .gen{margin-top:14px;font-size:11px;color:#555}
 }
 </style>
@@ -110,16 +116,22 @@ const brl=n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fd=d=>d.split('-').reverse().join('/');
 const wd=d=>new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','');
-const tot=d=>d.hotel+d.comb+d.alim;
-const sum=t=>t.dias.reduce((a,d)=>({hotel:a.hotel+d.hotel,comb:a.comb+d.comb,alim:a.alim+d.alim}),{hotel:0,comb:0,alim:0});
+const sm=a=>a.reduce((x,y)=>x+y,0);
+const tot=d=>sm(d.hotel)+sm(d.comb)+sm(d.alim);
+const sum=t=>t.dias.reduce((a,d)=>({hotel:a.hotel+sm(d.hotel),comb:a.comb+sm(d.comb),alim:a.alim+sm(d.alim)}),{hotel:0,comb:0,alim:0});
 const hoje=()=>new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const CAMPOS=[['hotel','Hotel'],['comb','Combustível'],['alim','Alimentação']];
+const arr=v=>{const n=num(v);return n?[n]:[]};
+const fmt=v=>v?String(v).replace('.',','):'';
+// Cada categoria guarda uma lista de valores. Também converte dados antigos (número único) e remove campos vazios.
+const limpa=()=>trips.forEach(t=>t.dias.forEach(d=>CAMPOS.forEach(([k])=>{d[k]=(Array.isArray(d[k])?d[k]:[d[k]||0]).filter(v=>v)})));
+const cel=a=>{const l=a.filter(v=>v);return brl(sm(a))+(l.length>1?'<br><small>'+l.map(v=>v.toLocaleString('pt-BR',{minimumFractionDigits:2})).join(' + ')+'</small>':'')};
 
 function show(tab){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.id==='tab-'+tab));
   document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
   $('#titulo').textContent=tab==='nova'?'Nova viagem':'Relatório';
-  if(tab==='rel')render();
+  if(tab==='rel'){limpa();render();}
 }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.tab));
 
@@ -137,7 +149,7 @@ function render(){
   $('#sel').innerHTML=trips.map(x=>`<option value="${x.id}"${x.id===sel?' selected':''}>${esc(x.nome)} (${fd(x.inicio)})</option>`).join('');
   $('#dias').innerHTML=t.dias.map((d,i)=>`<div class="card dia" data-i="${i}">
     <div class="dia-top"><input type="date" data-f="data" value="${d.data}"><button class="x" data-del aria-label="Excluir dia">×</button></div>
-    <div class="grid">${CAMPOS.map(([k,l])=>`<label>${l}<input data-f="${k}" inputmode="decimal" placeholder="0,00" value="${d[k]?String(d[k]).replace('.',','):''}"></label>`).join('')}</div>
+    <div class="grid">${CAMPOS.map(([k,l])=>`<div class="col"><span class="l">${l}</span>${(d[k].length?d[k]:[0]).map((v,j)=>`<input data-f="${k}" data-j="${j}" inputmode="decimal" placeholder="0,00" value="${fmt(v)}">`).join('')}<button type="button" class="mais" data-add="${k}" aria-label="Adicionar outro valor de ${l}">+</button><span class="cs" data-k="${k}">${d[k].filter(x=>x).length>1?brl(sm(d[k])):''}</span></div>`).join('')}</div>
     <div class="dtot">Total do dia <b>${brl(tot(d))}</b></div></div>`).join('');
   resumo(t);
 }
@@ -145,7 +157,7 @@ function render(){
 $('#form-nova').onsubmit=e=>{
   e.preventDefault();
   const t={id:'t'+Date.now(),nome:$('#n-nome').value.trim(),inicio:$('#n-data').value,
-    dias:[{data:$('#n-data').value,hotel:num($('#n-hotel').value),comb:num($('#n-comb').value),alim:num($('#n-alim').value)}]};
+    dias:[{data:$('#n-data').value,hotel:arr($('#n-hotel').value),comb:arr($('#n-comb').value),alim:arr($('#n-alim').value)}]};
   trips.unshift(t);save();sel=t.id;
   e.target.reset();$('#n-data').value=hoje();
   show('rel');
@@ -155,11 +167,20 @@ $('#dias').addEventListener('change',e=>{
   const card=e.target.closest('.dia'),f=e.target.dataset.f;if(!card||!f)return;
   const t=trips.find(x=>x.id===sel),d=t.dias[card.dataset.i];
   if(f==='data'){d.data=e.target.value||d.data}
-  else{d[f]=num(e.target.value);e.target.value=d[f]?String(d[f]).replace('.',','):''}
+  else{const j=+e.target.dataset.j,v=num(e.target.value);d[f][j]=v;e.target.value=fmt(v);
+    card.querySelector('.cs[data-k="'+f+'"]').textContent=d[f].filter(x=>x).length>1?brl(sm(d[f])):''}
   card.querySelector('.dtot b').textContent=brl(tot(d));
   save();resumo(t);
 });
 $('#dias').addEventListener('click',e=>{
+  const ad=e.target.closest('[data-add]');
+  if(ad){
+    const t=trips.find(x=>x.id===sel),i=ad.closest('.dia').dataset.i,k=ad.dataset.add,d=t.dias[i];
+    if(!d[k].length)d[k].push(0);
+    d[k].push(0);save();render();
+    document.querySelector('.dia[data-i="'+i+'"] input[data-f="'+k+'"][data-j="'+(d[k].length-1)+'"]').focus();
+    return;
+  }
   if(!e.target.closest('[data-del]'))return;
   const t=trips.find(x=>x.id===sel),i=e.target.closest('.dia').dataset.i;
   if(!confirm('Excluir este dia?'))return;
@@ -168,11 +189,11 @@ $('#dias').addEventListener('click',e=>{
 $('#add').onclick=()=>{
   const t=trips.find(x=>x.id===sel),ult=t.dias.length?t.dias[t.dias.length-1].data:t.inicio;
   const n=new Date(ult+'T12:00:00');n.setDate(n.getDate()+1);
-  t.dias.push({data:n.toISOString().slice(0,10),hotel:0,comb:0,alim:0});
+  t.dias.push({data:n.toISOString().slice(0,10),hotel:[],comb:[],alim:[]});
   save();render();
   const c=document.querySelectorAll('.dia');c[c.length-1].scrollIntoView({behavior:'smooth',block:'center'});
 };
-$('#sel').onchange=e=>{sel=e.target.value;render()};
+$('#sel').onchange=e=>{sel=e.target.value;limpa();render()};
 $('#del-viagem').onclick=()=>{
   const t=trips.find(x=>x.id===sel);
   if(!confirm('Excluir a viagem "'+t.nome+'" e todos os seus dias?'))return;
@@ -180,12 +201,12 @@ $('#del-viagem').onclick=()=>{
 };
 
 $('#imprimir').onclick=()=>{
-  const t=trips.find(x=>x.id===sel),s=sum(t);
+  limpa();const t=trips.find(x=>x.id===sel),s=sum(t);
   const dias=t.dias.slice().sort((a,b)=>a.data.localeCompare(b.data));
   $('#print').innerHTML=`<h1>Despesas de Viagem</h1><h2>${esc(t.nome)}</h2>
     <p>Início em ${fd(t.inicio)} — ${dias.length} dia(s)</p>
     <table><thead><tr><th>Dia</th><th>Hotel</th><th>Combustível</th><th>Alimentação</th><th>Total</th></tr></thead>
-    <tbody>${dias.map(d=>`<tr><td>${fd(d.data)} (${wd(d.data)})</td><td>${brl(d.hotel)}</td><td>${brl(d.comb)}</td><td>${brl(d.alim)}</td><td>${brl(tot(d))}</td></tr>`).join('')}</tbody>
+    <tbody>${dias.map(d=>`<tr><td>${fd(d.data)} (${wd(d.data)})</td><td>${cel(d.hotel)}</td><td>${cel(d.comb)}</td><td>${cel(d.alim)}</td><td>${brl(tot(d))}</td></tr>`).join('')}</tbody>
     <tfoot><tr><td>Total</td><td>${brl(s.hotel)}</td><td>${brl(s.comb)}</td><td>${brl(s.alim)}</td><td>${brl(s.hotel+s.comb+s.alim)}</td></tr></tfoot></table>
     <p class="gen">Gerado em ${new Date().toLocaleString('pt-BR')}</p>`;
   const antes=document.title;document.title='Despesas - '+t.nome;
@@ -193,6 +214,7 @@ $('#imprimir').onclick=()=>{
   setTimeout(()=>document.title=antes,1000);
 };
 
+limpa();save();
 $('#n-data').value=hoje();
 if(trips.length){sel=trips[0].id}
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.error));
